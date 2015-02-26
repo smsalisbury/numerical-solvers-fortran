@@ -3,24 +3,13 @@ use config
 use linear_system
 implicit none
 
-real,dimension(3,3)	::	A
-real,dimension(:,:),allocatable	::	L,U
+real,dimension(3,3)	::	A,A_prime
+real,dimension(3)	::	b
 integer	::	i
 
-A = transpose(reshape((/ 1,3,5,2,4,7,1,1,0 /), shape(A)))
-call LU(A,L,U)
-
-do i=1,3
-	write(*,*)A(i,:)
-end do
-write(*,*)
-do i=1,3
-	write(*,*)L(i,:)
-end do
-write(*,*)
-do i=1,3
-	write(*,*)U(i,:)
-end do
+A = transpose(reshape((/ 1,-3,1,2,-8,8,-6,3,-15 /), shape(A)))
+b = (/ 4,-2,9 /)
+write(*,*)solve_system(A,b)
 
 
 

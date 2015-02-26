@@ -1,70 +1,76 @@
 module linear_system
 use config
+use matrix
 implicit none
 
 contains
-	function det(A)
+	function solve_system(A,b,method_in)
 		!------------------------------------------
-		!	This function computes the determinant
-		! 	of a 2-dimensional matrix
+		!	This function finds a solution to the
+		!	system of equations Ax=b
 		!------------------------------------------
 		
 		! INPUT VARIABLES
 		real(wp),dimension(:,:)				::	A
+		real(wp),dimension(:)				::	b
+		character(20),optional				::	method_in
 		
 		! OUTPUT VARIABLES
-		real(wp)							::	det
+		real(wp),dimension(:),allocatable	::	solve_system
 		
 		! INTERNAL VARIABLES
-		integer								::	i
+		character(20)						::	method
+		integer								::	i_size,j_size,i,j,k
+		real(wp),dimension(:,:),allocatable	::	lu				! FOR LU DECOMPOSITION METHOD
+		real(wp),dimension(:),allocatable	::	y,x				! FOR LU DECOMPOSITION METHOD
 		
-		! COMPUTE DETERMINANT
-		det = 0.0_wp
-	end function det
-
-	subroutine LU(A,L,U)
-		!------------------------------------------
-		!	This subroutine computes the L and U
-		! 	matricies of an LU decomposition of A
-		!------------------------------------------
-		
-		! INPUT VARIABLES
-		real(wp),dimension(:,:),intent(in)					:: 	A
-		
-		! OUTPUT VARIABLES
-		real(wp),dimension(:,:),allocatable,intent(out)		::	L,U ! ** should they be allocatable?
-		
-		! INTERNAL VARIABLES
-		integer												::	i,j,k,i_size,j_size,a_size
+		! DEFAULT VALUES
+		if (present(method_in)) then
+			method = method_in
+		else
+			method = 'lu'
+		end if
 		
 		! VALIDATION
 		i_size = size(A,1)
 		j_size = size(A,2)
-		! **** Need to validate the size and dimension of A
+		if (i_size /= j_size) then
+			write(*,*)"The coefficient matrix in solve_system() is not a square matrix."
+			write(*,*)"Aborting..."
+			stop
+		else if ((det(A) - 0.0_wp) < 1.0E-5_wp) then
+			write(*,*)"The coefficient matrix in solve_system() is singular or nearly singular."
+			write(*,*)"det = ",det(A)
+		end if
 		
-		! SET UP L and U
-		a_size = i_size
-		allocate(L(a_size,a_size))
-		allocate(U(a_size,a_size))
-		L = 0.0_wp
-		U = 0.0_wp
+		! ALLOCATE RETURN
+		allocate(solve_system(i_size))
 		
-		! COMPUTE L and U
-		do i=1,a_size
-			do j=1,a_size
-				U(i,j) = A(i,j)
-				L(i,j) = A(i,j)
-				do k=1,(i-1)
-					U(i,j) = U(i,j) - U(k,j)*L(i,k)
+		! COMPUTE SOLUTION
+		select case (method)
+			case default
+				! LU decomposition method
+				allocate(y(i_size),x(i_size))
+				allocate(lu(i_size,j_size))
+				lu = lu_decomp(A)
+				y = 0.0_wp
+				x = 0.0_wp
+				do i=1,i_size
+					y(i) = b(i)
+					do k=1,i-1
+						y(i) = y(i) - lu(i,k)*y(k)
+					end do
 				end do
-				do k=1,(j-1)
-					L(i,j) = U(i,j) - U(k,j)*L(i,k)
+				do i=i_size,1,-1
+					x(i) = y(i)
+					do k=i+1,i_size
+						x(i) = x(i) - lu(i,k)*x(k)
+					end do
+					x(i) = x(i)/lu(i,i)
 				end do
-				L(i,j) = L(i,j)/U(j,j)
-			end do		
-		end do
-		
-	end subroutine LU
+				solve_system = x
+		end select
+	end function solve_system
 
 
 
