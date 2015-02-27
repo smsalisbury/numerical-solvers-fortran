@@ -30,7 +30,7 @@ contains
 			to_convergence = .FALSE.
 		else
 			to_convergence = .TRUE.
-		end if
+		endif
 		
 		! CALCULATE INTEGRAL
 		!if (to_convergence) then
@@ -45,5 +45,26 @@ contains
 			monte_carlo = (b-a)*sum/real(n,wp)
 	!	end if
 	end function monte_carlo
+	
+	subroutine gauss_quadrature_points(n,x,w)
+		!------------------------------------------
+		!	This function uses the Legendre Polynomials
+		!	to calculate the Gauss Points and Weights
+		!	for a specified number of n points
+		!------------------------------------------
+		
+		! INPUT VARIABLES
+		integer,intent(in)								:: 	n
+		
+		! OUTPUT VARIABLES
+		real(wp),dimension(:),allocatable,intent(out)	::	x,w
+		
+		! INTERNAL VARIABLES
+		
+		! ALLOCATE OUTPUTS
+		allocate(x(n),w(n))
+		
+		! CALCULATE INTEGRAL
+	end subroutine gauss_quadrature_points
 
 end module integrate1D

@@ -1,4 +1,4 @@
-program main
+program problem1
 use config
 use integrate1D
 use functions
@@ -21,4 +21,4 @@ do k=1,20
 	write(*,*)n,mc2,diff
 end do
 
-end program main
+end program problem1
