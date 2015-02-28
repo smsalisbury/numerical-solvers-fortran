@@ -2,6 +2,9 @@ module functions
 use config
 implicit none
 
+real(wp),parameter				::	f1_actual = 0.0000164883_wp
+real(wp),parameter				::	f2_actual = -0.54734_wp
+real(wp),parameter				::	pi = 4.0_wp*atan(1.0_wp)
 ! Just some functions to integrate
 
 contains
