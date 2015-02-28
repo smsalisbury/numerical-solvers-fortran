@@ -1,0 +1,9 @@
+&rod
+    L  = 1.0            !Length of rod [meters]
+    T0 = 0.0            !Temperature at Left end of rod (c)
+    TL = 1.0            !Temp at right end of rod (c)
+    E_Small = 1.0E-6    !Convergence Error Limit
+    max_iter = 1000000  !Max numer of iterations
+    kconst = 1.0        !k > 0.0 use the value, less than will be 1 for half the rod, 2 for second half
+    qconst = -5.0        !qx > 0.0 use the value, less than that will be abs(qx)*abs(x-l/2) over the whole rode
+/
