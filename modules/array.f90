@@ -68,5 +68,30 @@ contains
     end do
     
   end function array_search
+  
+	subroutine array_sort(A) ! THIS ISNT WORKING
+		! INOUT
+		real(wp),dimension(:),intent(inout)		::	A
+		
+		! INTERNAL
+		integer									::	i,temp,bubble,lsup
+		
+		! SORT
+		lsup = size(A)
+		do while (lsup > 1)
+			bubble = 0
+			do i=1,(lsup-1)
+				if (A(i) > A(i+1)) then
+					temp = A(i)
+					A(i) = A(i+1)
+					A(i+1) = temp
+					bubble = i
+				endif
+			enddo
+			lsup = bubble
+			write(*,*)lsup,A
+		enddo
+		write(*,*)
+	end subroutine array_sort
 
 end module array

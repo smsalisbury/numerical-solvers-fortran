@@ -21,6 +21,8 @@ contains
 		
 		! INTERNAL
 		real(wp)				::	e
+		real(wp)				::	der
+		real(wp)				::	secant_old
 		integer					::	k,max_iter=1000000
 		
 		! DEFAULT VALUES
@@ -32,8 +34,16 @@ contains
 		
 		! CALCULATE
 		secant = g
+		secant_old = secant
 		do k=1,max_iter
+			der = c_diff_first(f,secant)
+			if (abs(der) < e) then
+				x = x + 0.1_wp
+				cycle
+			endif
 			secant = secant - f(secant)/c_diff_first(f,secant)
+			if (abs(secant-secant_old) < e) exit
+			secant_old = secant
 		enddo
 	end function secant
 	

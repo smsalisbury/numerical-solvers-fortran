@@ -9,7 +9,7 @@
 FC = gfortran
 
 # Directories
-MOD_DIR = c:/numerical-solvers-fortran/modules
+MOD_DIR = /home/spencer/numerical-solvers-fortran/modules
 OBJ_DIR = obj
 INCLUDES = -I. -I$(MOD_DIR)
 
@@ -18,7 +18,7 @@ FCFLAGS = -g -O2 -fbounds-check
 
 # Program name
 PROGRAM = a.out
-MOD_OBJECTS = config.o integrate1D.o functions.o file_io.o main.o
+MOD_OBJECTS = config.o global.o array.o legendre_polynomials.o integrate1D.o functions.o file_io.o main.o
 
 # ======================
 # MAKE COMMANDS
@@ -37,9 +37,18 @@ main.o:
 
 config.o:
 	$(FC) $(FCFLAGS) -c $(FILENAME) config.f90
+
+global.o:
+	$(FC) $(FCFLAGS) -c $(FILENAME) $(MOD_DIR)/global.f90
+
+array.o:
+	$(FC) $(FCFLAGS) -c $(FILENAME) $(MOD_DIR)/array.f90
 	
 functions.o:
 	$(FC) $(FCFLAGS) -c $(FILENAME) functions.f90
+
+legendre_polynomials.o:
+	$(FC) $(FCFLAGS) -c $(FILENAME) $(MOD_DIR)/legendre_polynomials.f90
 
 integrate1D.o:
 	$(FC) $(FCFLAGS) -c $(FILENAME) $(MOD_DIR)/integrate1D.f90

@@ -17,20 +17,17 @@ real(wp)						::	b = 3.0_wp
 
 integer,dimension(4)			::	intervals = (/ 10,20,40,80 /)
 
-
 do i=1,size(intervals)
 	write(*,*)intervals(i)," intervals"
 	do k=1,10
 		n = 2**k
 		sum = 0.0_wp
 		do j=1,intervals(i)
-			sum = sum + monte_carlo(f2,a+real(j-1,wp)*(b-a)/real(intervals(i),wp),a+real(j,wp)*(b-a)/real(intervals(i),wp),n)
+			sum = sum + monte_carlo(f2, a+real(j-1,wp)*(b-a)/real(intervals(i),wp), a+real(j,wp)*(b-a)/real(intervals(i),wp), n)
 		enddo
 		mc2 = sum
-		
-		!mc1 = monte_carlo(f2,2.0_wp*pi,1.5_wp*pi,n)
 		diff = abs(mc2 - f2_actual)
-		write(*,*)n,mc2,diff
+		write(*,*)n,mc2,abs(diff/f2_actual)*100.0_wp
 	enddo
 	write(*,*)
 enddo

@@ -1,9 +1,13 @@
 program main
 use config
-use roots
+use integrate1D
 implicit none
 
-write(*,*)secant(f,4.0_wp)
+real(wp),dimension(:),allocatable	::	x,w
+
+call gauss_quadrature_points(3,x,w)
+write(*,*)x
+write(*,*)w
 
 
 

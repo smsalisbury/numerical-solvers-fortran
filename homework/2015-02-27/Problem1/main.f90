@@ -15,10 +15,10 @@ real(wp)						::	mc1,mc2,diff
 
 do k=1,20
 	n = 2**k
-	!mc1 = monte_carlo(f2,2.0_wp*pi,1.5_wp*pi,n)
-	mc2 = monte_carlo(f2,0.0_wp,3.0_wp,n)
-	diff = abs(mc2 - f2_actual)
-	write(*,*)n,mc2,diff
+	mc1 = monte_carlo(f2,2.0_wp*pi,1.5_wp*pi,n)
+	!mc2 = monte_carlo(f2,0.0_wp,3.0_wp,n)
+	diff = abs(mc1 - f1_actual)
+	write(*,*)n,mc1,diff
 end do
 
 end program problem1

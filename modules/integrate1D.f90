@@ -1,20 +1,21 @@
 module integrate1D
 use config
+use global
+use legendre_polynomials
+use array
 implicit none
 
 contains
 	function monte_carlo(f,a,b,n)
 		!------------------------------------------
 		!	This function integrates the function f
-		!	using a Monte Carlo method. If n is not
-		!	specified, then the method runs until it
-		!	converges.
+		!	using a Monte Carlo method.
 		!------------------------------------------
 		
 		! INPUT VARIABLES
 		real(wp),external				::	f
 		real(wp)						::	a,b
-		integer,optional				:: 	n
+		integer							:: 	n
 		
 		! OUTPUT VARIABLES
 		real(wp)						::	monte_carlo
@@ -25,26 +26,65 @@ contains
 		real(wp)						:: 	r,sum,x
 		integer							::	k
 		
+		! CALCULATE INTEGRAL
+		sum = 0.0_wp
+		do k=1,n
+			call seed_random()
+			call random_number(r)
+			x = r*(b-a)+a
+			sum = sum + f(x)
+		end do
+		monte_carlo = (b-a)*sum/real(n,wp)
+	end function monte_carlo
+	
+	function gauss_quadrature(f,a,b,n_in,subint_in)
+		!------------------------------------------
+		!	This function integrates the function
+		!	f using Gaussian Quadrature.
+		!------------------------------------------
+		
+		! INPUT VARIABLES
+		real(wp),external								::	f
+		real(wp)										::	a,b
+		integer,optional								:: 	subint_in,n_in
+		
+		! OUTPUT VARIABLES
+		real(wp)										::	gauss_quadrature
+		
+		! INTERNAL VARIABLES
+		real(wp),dimension(:),allocatable				::	x,w
+		real(wp)										::	p,q,point
+		real(wp)										::	sum
+		integer											::	subint,n
+		integer											::	k,j
+		
 		! DEFAULT VALUES
-		if (present(n)) then
-			to_convergence = .FALSE.
+		if (present(subint_in)) then
+			subint = subint_in
 		else
-			to_convergence = .TRUE.
+			subint = 1
+		endif
+		if (present(n_in)) then
+			n = n_in
+		else
+			n = 2
 		endif
 		
-		! CALCULATE INTEGRAL
-		!if (to_convergence) then
+		! GET GAUSS POINTS AND WEIGHTS
+		call gauss_quadrature_points(n,x,w)
 		
-	!	else
-			sum = 0.0_wp
-			do k=1,n
-				call random_number(r)
-				x = r*(b-a)+a
-				sum = sum + f(x)
-			end do
-			monte_carlo = (b-a)*sum/real(n,wp)
-	!	end if
-	end function monte_carlo
+		sum = 0.0_wp
+		do k = 1,subint
+			p = real(k-1,wp)*real(b-a,wp)/real(subint,wp) + real(a,wp)
+			q = real(k,wp)*real(b-a,wp)/real(subint,wp) + real(a,wp)
+			do j = 1,n
+				point = real(q-p,wp)*x(j)/2.0_wp + real(q+p,wp)/2.0_wp
+				sum = sum + (real(q-p,wp)*w(j)/2.0_wp) * f(point)
+			enddo
+		end do
+		gauss_quadrature = sum
+	
+	end function gauss_quadrature
 	
 	subroutine gauss_quadrature_points(n,x,w)
 		!------------------------------------------
@@ -60,14 +100,39 @@ contains
 		real(wp),dimension(:),allocatable,intent(out)	::	x,w
 		
 		! INTERNAL VARIABLES
+		integer											::	i
+		real(wp)										::	root
+		integer											::	roots_found
 		
 		! ALLOCATE OUTPUTS
 		allocate(x(n),w(n))
+		x = 0.0_wp
+		w = 0.0_wp
 		
-		! CALCULATE INTEGRAL
+		! CALCULATE POINTS
+		roots_found = 0
+		do i = -10,10
+			root = legendre_poly_root(n,real(i,wp)/10.0_wp)
+			if (root <= 1.0_wp .AND. root >= -1.0_wp) then
+				if (in_array(root,x)) then
+					cycle
+				else
+					roots_found = roots_found + 1
+					x(roots_found) = root
+				endif
+			endif
+			if (roots_found >= n) exit
+		end do
+		
+		! FUTURE NOTE - maybe sort the x array here
+		
+		! CALCULATE WEIGHTS
+		do i = 1,size(x)
+			w(i) = (2.0_wp*(1.0_wp - x(i)**2))/(real(n,wp)*legendre_poly(n-1,x(i)))**2
+		enddo
 	end subroutine gauss_quadrature_points
   
-  function trapezoid(f,a,b)
+	function trapezoid(f,a,b)
 		!------------------------------------------
 		!	Evaluate an integral approximation from
 		!	a to b using the trapezoid rule.
@@ -186,6 +251,8 @@ contains
 			fb = f(b)
 			fab = f(real(a+b,wp)/2.0_wp)
 			first_try = simpson_values(fa,fab,fb,a,b)
+		else if ((method .EQ. 'gauss') .OR. (method .EQ. 'gaussian')) then
+			first_try = gauss_quadrature(f,a,b)
 		endif
 		
 		! RECURSIVELY CALCULATE THE INTEGRAL
@@ -194,6 +261,8 @@ contains
 			adaptive_quadrature = adaptive_quadrature_helper(f,(/ fa,fb /),a,b,method,first_try,10,e)
 		else if ((method .EQ. 'simpson') .OR. (method .EQ. 'simpsons')) then
 			adaptive_quadrature = adaptive_quadrature_helper(f,(/ fa,fab,fb /),a,b,method,first_try,10,e)
+		else if ((method .EQ. 'gauss') .OR. (method .EQ. 'gaussian')) then
+			adaptive_quadrature = adaptive_quadrature_helper(f,(/ 0.0_wp /),a,b,method,first_try,10,e)
 		endif
 		
   end function adaptive_quadrature
@@ -220,6 +289,7 @@ contains
 		real(wp)						::	sub1,sub2,next_sub1,next_sub2
 		real(wp)						::	ab,aab,abb
 		real(wp)						::	fab,faab,fabb
+		integer							::	tmp_level
 		
 		! VALIDATE
 		if (method .EQ. 'trapezoid' .AND. size(f_values) /= 2) then
@@ -248,23 +318,33 @@ contains
 			fabb = f(abb)
 			sub1 = simpson_values(f_values(1),faab,f_values(2),a,ab)
 			sub2 = simpson_values(f_values(2),fabb,f_values(3),ab,b)
+		else if ((method .EQ. 'gauss') .OR. (method .EQ. 'gaussian')) then
+			ab = real(a+b,wp)/2.0_wp
+			sub1 = gauss_quadrature(f,a,ab)
+			sub2 = gauss_quadrature(f,ab,b)
 		endif
+		
+		write(*,*)level,a,b,first,sub1+sub2
 		
 		if (abs(first - (sub1+sub2)) < e) then
 			! If the subdivision is close enough to the original, return the value
 			res = sub1+sub2
 		else if (level == 0) then
 			! Maximum subdivision levels reached
-			write(*,*)"Maximum subdivition levels reached."
+			write(*,*)"Maximum subdivision levels reached."
 			res = sub1 + sub2
 		else
 			! Subdivide some more
+			tmp_level = level
 			if (method .EQ. 'trapezoid') then
-				next_sub1 = adaptive_quadrature_helper(f,(/ f_values(1),fab /),a,ab,method,sub1,level-1,e)
-				next_sub2 = adaptive_quadrature_helper(f,(/ fab,f_values(2) /),ab,b,method,sub2,level-1,e)
+				next_sub1 = adaptive_quadrature_helper(f,(/ f_values(1),fab /),a,ab,method,sub1,tmp_level-1,e)
+				next_sub2 = adaptive_quadrature_helper(f,(/ fab,f_values(2) /),ab,b,method,sub2,tmp_level-1,e)
 			else if ((method .EQ. 'simpson') .OR. (method .EQ. 'simpsons')) then
-				next_sub1 = adaptive_quadrature_helper(f,(/ f_values(1),faab,fab /),a,ab,method,sub1,level-1,e)
-				next_sub2 = adaptive_quadrature_helper(f,(/ fab,fabb,f_values(2) /),ab,b,method,sub2,level-1,e)
+				next_sub1 = adaptive_quadrature_helper(f,(/ f_values(1),faab,fab /),a,ab,method,sub1,tmp_level-1,e)
+				next_sub2 = adaptive_quadrature_helper(f,(/ fab,fabb,f_values(2) /),ab,b,method,sub2,tmp_level-1,e)
+			else if ((method .EQ. 'gauss') .OR. (method .EQ. 'gaussian')) then
+				next_sub1 = adaptive_quadrature_helper(f,(/ 0.0_wp /),a,ab,method,sub1,tmp_level-1,e)
+				next_sub2 = adaptive_quadrature_helper(f,(/ 0.0_wp /),ab,b,method,sub2,tmp_level-1,e)
 			endif
 			res = next_sub1 + next_sub2
 		endif
