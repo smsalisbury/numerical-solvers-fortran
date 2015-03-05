@@ -269,7 +269,7 @@ contains
   
   recursive function adaptive_quadrature_helper(f,f_values,a,b,method,first,level,e) result(res)
 		!------------------------------------------
-		!	This is a helper function explicitly
+		!	This is a helper function exclusively
 		!	used in the adaptive_quadrature function.
 		!------------------------------------------
 		
@@ -323,8 +323,6 @@ contains
 			sub1 = gauss_quadrature(f,a,ab)
 			sub2 = gauss_quadrature(f,ab,b)
 		endif
-		
-		write(*,*)level,a,b,first,sub1+sub2
 		
 		if (abs(first - (sub1+sub2)) < e) then
 			! If the subdivision is close enough to the original, return the value
