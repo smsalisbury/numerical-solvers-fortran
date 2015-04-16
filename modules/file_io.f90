@@ -126,46 +126,13 @@ contains
     end if
   end subroutine create_dir
   
-  ! This subroutine reads a set of ordered pairs from
-  ! a file into arrays. The subroutine allocates the
-  ! arrays.
-  ! read_xy(character filename, real(:) x, real(:) y)
-  !   filename    character(*)            The filename to read.
-  !   x           real(:),allocatable     The output variable for the first column of data.
-  !   y           real(:),allocatable     The output variable for the second column of data.
-  subroutine read_xy(filename,x,y)
+  ! This subroutine deletes a file
+  subroutine rm_file(filename)
     ! INPUT VARIABLES
-    character(*),intent(in)                   ::  filename
+    character(*)    :: filename
     
-    ! OUTPUT VARIABLES
-    real(wp),dimension(:),allocatable,intent(out)  ::  x,y
-    
-    ! INTERNAL VARIALBES
-    real(wp)                                  ::  dump
-    integer                                   ::  file_unit=0,error
-    integer                                   ::  n,i
-    ! OPEN FILE
-    file_unit = file_open(filename,'READ')
-    
-    ! GET FILE SIZE
-    n = 0
-    do i=1,10
-      n = n + 1
-      read(file_unit,*,iostat = error)dump
-      if (error /= 0) exit
-    end do
-    
-    ! ALLOCATE ARRAYS
-    allocate(x(n))
-    allocate(y(n))
-    
-    ! READ VARIABLES
-    rewind file_unit
-    do i=1,n
-      read(file_unit,*)x(i),y(i)
-    end do
-    
-    call file_close(file_unit)  
-  end subroutine
+    ! DELETE FILE
+	call system('rm '//trim(filename))
+  end subroutine rm_file
 
 end module file_io
